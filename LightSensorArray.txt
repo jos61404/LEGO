@@ -89,12 +89,12 @@ task main ()
 					msg += "   ";
 					TextOut(0, line_loc[i], msg, false);
 				}
-		if(rawUncalibrated[0] > 40 )
+		if(rawCalibrated[0] > 40 )
         {
             OnFwd(OUT_C,80);
             OnFwd(OUT_B,80);
         }
-        if(rawUncalibrated[0] <30 )
+        if(rawCalibrated[0] <30 )
         {
             Off(OUT_BC);
         }		
