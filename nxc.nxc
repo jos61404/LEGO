@@ -1,0 +1,32 @@
+task main()
+{
+  SetSensorLowspeed(S3);
+  SetSensorLowspeed(S4);
+  
+  float vr,vl;    //定義vr,vl來當右左輪的動力
+  float kp=0.4, a=22.45;  //kp代表放大倍率,a帶表馬達動力的初始值
+  int average,realtime;   //average平均值,realtime目標值
+  OnFwd(OUT_BC,45);
+  Wait(300);
+  Off(OUT_BC);
+  average = NXTLineLeaderAverage(S3, MS_ADDR_LINELDR); //自動抓取平均值
+  NumOut(0, LCD_LINE2, average);   //average   平均
+  while(true)
+  {
+       realtime = NXTLineLeaderAverage(S3, MS_ADDR_LINELDR); //抓取目標值
+       NumOut(0, LCD_LINE3, realtime);
+       if(realtime>average)         //當目標值大於平均值
+       {
+       vl = a + kp * (realtime-average);   //vl左輪動力小
+       vr = a + kp * (realtime+average);   //vr右輪動力大
+       OnFwd(OUT_B,vr+0.1);
+       OnFwd(OUT_C,vl);
+       }
+       else if(realtime<average)    //當目標值小於平均值
+       {
+       vl = a + kp * (realtime+average);    //vl左輪動力大
+       vr = a + kp * (realtime-average);   //vr右輪動力小
+       OnFwd(OUT_B,vr);
+       OnFwd(OUT_C,vl);
+  }
+}
