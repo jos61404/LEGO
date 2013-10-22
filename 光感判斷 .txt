@@ -1,0 +1,129 @@
+const byte SensorPort  =  IN_1;
+#define ADDR     0x14
+#include "LSA-lib.nxc"
+
+int cb;
+task button_handler()
+{
+    while (true)
+	{
+
+        if ( ButtonPressed(BTNCENTER, true) )
+	    {
+            while (ButtonPressed(BTNCENTER, true)) ;            //debounce the switch
+            cb ++;
+        }
+
+    } // end of while
+        Wait(500);   // don't hog the CPU.
+}
+
+task main ()
+{
+
+    string msg;
+    string x;
+    int s, i;
+
+	byte line_loc[10];
+	line_loc[0] = LCD_LINE1;
+	line_loc[1] = LCD_LINE2;
+	line_loc[2] = LCD_LINE3;
+	line_loc[3] = LCD_LINE4;
+ 	line_loc[4] = LCD_LINE5;
+	line_loc[5] = LCD_LINE6;
+	line_loc[6] = LCD_LINE7;
+	line_loc[7] = LCD_LINE8;
+
+    byte message[];
+    unsigned byte buf[20];
+    unsigned byte rawCalibrated[8];
+    unsigned int rawUncalibrated[8];
+    int count, l , left , right , advance ;
+    byte nByteReady = 0;
+
+    StartTask(button_handler);
+    SetSensorLowspeed(SensorPort);
+    LSA_WakeUp(SensorPort, ADDR);
+    Wait(300);
+    cb = 1;
+
+  while ( true ) {
+    if ( !(cb % 2) ) {
+        for ( i=0; i < 8; i++)
+		{
+            rawCalibrated[i] = 0;
+        }
+
+    if( LSA_ReadRaw_Calibrated (SensorPort, ADDR, rawCalibrated) ) {
+        for ( i=0; i < 8; i++)
+		    {
+				msg = "";
+				msg += NumToStr(i);
+				msg += ": ";
+				msg += NumToStr(rawCalibrated[i]);
+				if ( i==0 ) msg += " (cal)";
+				msg += "   ";
+				TextOut(0, line_loc[i], msg, false);
+			}
+
+
+        left =  ( rawCalibrated[0] + rawCalibrated[1] + rawCalibrated[2])  ;
+        right =  ( rawCalibrated[5]  +rawCalibrated[6] + rawCalibrated[7] )  ;
+        advance = ( rawCalibrated[3] + rawCalibrated[4]  )   ;
+
+	        if(advance > left || advance > right )
+          {
+          OnRev(OUT_BC,50);
+          }
+          else if( left > advance)
+          {
+          OnRev(OUT_B,70);
+          OnRev(OUT_C,40);
+          }
+          else if( right > advance)
+          {
+          OnRev(OUT_C,70);
+          OnRev(OUT_B,40);
+          }
+          else
+          {
+           Off(OUT_BC);
+          }
+
+
+
+
+
+      }
+    } else {
+      for ( i=0; i < 8; i++) {
+        rawUncalibrated[i] = 0;
+      }
+      if ( LSA_ReadRaw_Uncalibrated (SensorPort, ADDR, rawUncalibrated) ) {
+
+        for ( i=0; i < 8; i++) {
+					msg = "";
+					msg += NumToStr(i);
+					msg += ": ";
+					msg += NumToStr(rawUncalibrated[i]);
+					if ( i==0 ) msg += " (un-cal)";
+					msg += "   ";
+					TextOut(0, line_loc[i], msg, false);
+				}
+      }
+    }
+    Wait(500);
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
