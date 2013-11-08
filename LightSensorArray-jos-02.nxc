@@ -1,0 +1,160 @@
+const byte SensorPort  =  IN_1;
+const byte SensorPort2  =  IN_2;
+#define ADDR     0x14
+#include "LSA-lib.nxc"
+
+int cb;
+task button_handler()
+{
+    while (true)
+	{
+
+        if ( ButtonPressed(BTNCENTER, true) )
+	    {
+            while (ButtonPressed(BTNCENTER, true)) ;            //debounce the switch
+            cb ++;
+        }
+
+    } // end of while
+           // don't hog the CPU.
+}
+
+task main ()
+{
+    SetSensorLight(IN_2);
+    string msg;
+    string x;
+    int s, i;
+
+	byte line_loc[10];
+	line_loc[0] = LCD_LINE1;
+	line_loc[1] = LCD_LINE2;
+	line_loc[2] = LCD_LINE3;
+	line_loc[3] = LCD_LINE4;
+ 	line_loc[4] = LCD_LINE5;
+	line_loc[5] = LCD_LINE6;
+	line_loc[6] = LCD_LINE7;
+	line_loc[7] = LCD_LINE8;
+
+    byte message[];
+    unsigned byte buf[20];
+    unsigned byte rawCalibrated[8];
+    unsigned int rawUncalibrated[8];
+    int count, l , left , right , advance ;
+    byte nByteReady = 0;
+
+    StartTask(button_handler);
+    SetSensorLowspeed(SensorPort);
+    LSA_WakeUp(SensorPort, ADDR);
+    cb = 1;
+
+      int j[4];
+      int k=1;
+
+        if(SENSOR_2 >50  )
+            {
+                  repeat(1)
+                  {
+                Off(OUT_BC);
+
+                 Wait(1900);
+                             }
+                              }
+
+  while ( true ) {
+    if ( !(cb % 2) ) {
+        for ( i=0; i < 8; i++)
+		{
+            rawCalibrated[i] = 0;
+        }
+    if( LSA_ReadRaw_Calibrated (SensorPort, ADDR, rawCalibrated) ) {
+        for ( i=0; i < 8; i++)
+		    {
+				msg = "";
+				msg += NumToStr(i);
+				msg += ": ";
+				msg += NumToStr(rawCalibrated[i]);
+				if ( i==0 ) msg += " (cal)";
+				msg += "   ";
+				TextOut(0, line_loc[i], msg, false);
+			}
+        left =  ( rawCalibrated[0] + rawCalibrated[1] ) /2  ;
+        right =  ( rawCalibrated[6] + rawCalibrated[7]  ) /2  ;
+        advance = ( rawCalibrated[3] + rawCalibrated[4])   ;
+
+
+
+
+
+
+
+         if(  rawCalibrated[4] > 0 )
+        {
+            OnRev(OUT_BC,50);
+        }
+         else if ( rawCalibrated[3] > 0)
+        {
+            OnRev(OUT_C,50);
+            OnRev(OUT_B,60);
+        }
+        else if ( rawCalibrated[2] > 0)
+        {
+            OnRev(OUT_C,50);
+            OnRev(OUT_B,60);
+        }
+         else if ( rawCalibrated[5] > 0)
+        {
+            OnRev(OUT_C,60);
+            OnRev(OUT_B,50);
+        }
+         else if ( rawCalibrated[1] > 0)
+        {
+            OnRev(OUT_C,0);
+            OnRev(OUT_B,45);
+
+        }
+         else if ( rawCalibrated[6] > 0)
+        {
+            OnRev(OUT_C,45);
+            OnRev(OUT_B,0);
+        }
+         else if ( rawCalibrated[0] > 0  )
+        {
+            OnRev(OUT_C,-25);
+            OnRev(OUT_B,45);
+        }
+        else if ( rawCalibrated[7] > 0  )
+        {
+            OnRev(OUT_B,-25);
+            OnRev(OUT_C,45);
+        }
+              }
+
+
+
+
+    }
+    }
+    else {
+      for ( i=0; i < 8; i++) {
+        rawUncalibrated[i] = 0;
+      }
+      if ( LSA_ReadRaw_Uncalibrated (SensorPort, ADDR, rawUncalibrated) ) {
+
+        for ( i=0; i < 8; i++) {
+					msg = "";
+					msg += NumToStr(i);
+					msg += ": ";
+					msg += NumToStr(rawUncalibrated[i]);
+					if ( i==0 ) msg += " (un-cal)";
+					msg += "   ";
+					TextOut(0, line_loc[i], msg, false);
+				}
+				  }
+          }
+    }
+}
+
+
+
+
